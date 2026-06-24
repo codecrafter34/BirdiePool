@@ -10,8 +10,10 @@ import { useTransition } from "react";
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Overview" },
   { href: "/dashboard/scores", icon: Target, label: "My Scores" },
-  { href: "/dashboard/draws", icon: Trophy, label: "Draws & Prizes" },
+  { href: "/dashboard/draws", icon: Trophy, label: "Draw History" },
+  { href: "/dashboard/winnings", icon: Trophy, label: "My Winnings" },
   { href: "/dashboard/subscription", icon: CreditCard, label: "Subscription" },
+  { href: "/dashboard/impact", icon: HeartHandshake, label: "My Impact" },
   { href: "/dashboard/charities", icon: HeartHandshake, label: "Charities" },
   { href: "/dashboard/settings", icon: Settings, label: "Settings" },
 ];

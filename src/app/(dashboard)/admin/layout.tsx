@@ -33,6 +33,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Trophy className="w-4 h-4" />
           Winners
         </Link>
+        <Link 
+          href="/admin/draws" 
+          className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors text-muted-foreground hover:bg-muted/50 px-3 py-2 rounded-lg"
+        >
+          <LayoutDashboard className="w-4 h-4" />
+          Draws
+        </Link>
+        <Link 
+          href="/admin/subscriptions" 
+          className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors text-muted-foreground hover:bg-muted/50 px-3 py-2 rounded-lg"
+        >
+          <Users className="w-4 h-4" />
+          Subscriptions
+        </Link>
+        <Link 
+          href="/admin/scores" 
+          className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors text-muted-foreground hover:bg-muted/50 px-3 py-2 rounded-lg"
+        >
+          <Trophy className="w-4 h-4" />
+          Scores
+        </Link>
       </nav>
       {children}
     </div>

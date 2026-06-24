@@ -12,6 +12,16 @@ export async function uploadProof(winnerId: string, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Unauthorized' };
 
+  // First, check if the winner record belongs to the user
+  const { data: winner, error: winnerError } = await supabase
+    .from('winners')
+    .select('id')
+    .eq('id', winnerId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (winnerError || !winner) return { error: 'Invalid winner record' };
+
   const fileExt = file.name.split('.').pop();
   const fileName = `${user.id}-${winnerId}-${Date.now()}.${fileExt}`;
 
@@ -26,23 +36,47 @@ export async function uploadProof(winnerId: string, formData: FormData) {
     .from('winner-proofs')
     .getPublicUrl(fileName);
 
-  // Update Winners DB Record
-  const { error: updateError } = await supabase
-    .from('winners')
-    .update({ 
-      proof_url: publicUrlData.publicUrl,
-      verification_status: 'pending'
-    })
-    .eq('id', winnerId)
-    .eq('user_id', user.id);
+  // Insert or Update the proof_uploads table
+  // Check if an existing proof_upload exists for this winner
+  const { data: existingProof } = await supabase
+    .from('proof_uploads')
+    .select('id')
+    .eq('winner_id', winnerId)
+    .single();
 
-  if (updateError) return { error: updateError.message };
+  if (existingProof) {
+    // If re-uploading after rejection
+    const { error: updateError } = await supabase
+      .from('proof_uploads')
+      .update({ 
+        file_url: publicUrlData.publicUrl,
+        status: 'pending_review',
+        admin_remarks: null // Clear previous remarks
+      })
+      .eq('id', existingProof.id);
+      
+    if (updateError) return { error: updateError.message };
+  } else {
+    // Fresh upload
+    const { error: insertError } = await supabase
+      .from('proof_uploads')
+      .insert({
+        winner_id: winnerId,
+        file_url: publicUrlData.publicUrl,
+        status: 'pending_review'
+      });
+      
+    if (insertError) return { error: insertError.message };
+  }
+
+  // Set the actual winner status to 'pending'
+  await supabase.from('winners').update({ status: 'pending' }).eq('id', winnerId);
 
   revalidatePath('/dashboard/winnings');
   return { success: true };
 }
 
-export async function reviewProof(winnerId: string, status: 'verified' | 'rejected') {
+export async function reviewProof(proofId: string, winnerId: string, status: 'verified' | 'rejected', remarks?: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Unauthorized' };
@@ -50,15 +84,25 @@ export async function reviewProof(winnerId: string, status: 'verified' | 'reject
   const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).single();
   if (profile?.role !== 'admin') return { error: 'Unauthorized' };
 
-  const { error } = await supabase
-    .from('winners')
+  // Update proof_uploads table
+  const { error: proofError } = await supabase
+    .from('proof_uploads')
     .update({ 
-      verification_status: status,
-      payout_status: status === 'verified' ? 'pending' : 'failed' 
+      status: status,
+      admin_remarks: remarks || null
     })
+    .eq('id', proofId);
+
+  if (proofError) return { error: proofError.message };
+
+  // Update winners table status
+  const winnerStatus = status === 'verified' ? 'approved' : 'rejected';
+  const { error: winnerError } = await supabase
+    .from('winners')
+    .update({ status: winnerStatus })
     .eq('id', winnerId);
 
-  if (error) return { error: error.message };
+  if (winnerError) return { error: winnerError.message };
   
   revalidatePath('/admin/winners');
   return { success: true };
@@ -72,11 +116,12 @@ export async function markPayoutComplete(winnerId: string) {
   const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).single();
   if (profile?.role !== 'admin') return { error: 'Unauthorized' };
 
+  // Only allow payout if status is approved
   const { error } = await supabase
     .from('winners')
-    .update({ payout_status: 'completed' })
+    .update({ status: 'paid' })
     .eq('id', winnerId)
-    .eq('verification_status', 'verified');
+    .eq('status', 'approved');
 
   if (error) return { error: error.message };
 
