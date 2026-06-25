@@ -10,9 +10,11 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      return NextResponse.redirect(new URL(next, request.url))
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error && data.user) {
+      const { data: profile } = await supabase.from('users').select('role').eq('id', data.user.id).single();
+      const redirectUrl = profile?.role === 'admin' ? '/admin' : '/dashboard';
+      return NextResponse.redirect(new URL(redirectUrl, request.url))
     }
   }
 

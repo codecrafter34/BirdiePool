@@ -62,7 +62,7 @@ export default async function AdminScoresPage({
                     <span className="text-xl font-bold text-primary">{score.score}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-white">{new Date(score.played_at).toLocaleDateString()}</p>
+                    <p className="text-white">{new Date(score.play_date).toLocaleDateString()}</p>
                   </td>
                   <td className="px-6 py-4 flex gap-4 justify-end items-center opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                     <form action={async (formData) => {
@@ -77,10 +77,10 @@ export default async function AdminScoresPage({
                     </form>
 
                     <form action={async () => { 'use server'; await adminDeleteScore(score.id); }}>
-                      <button className="text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 px-3 py-1.5 rounded transition-colors"
-                        onClick={(e) => {
-                          if (!confirm("Are you sure you want to permanently delete this score?")) e.preventDefault();
-                        }}>
+                      <button 
+                        type="submit"
+                        className="text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 px-3 py-1.5 rounded transition-colors"
+                      >
                         Delete
                       </button>
                     </form>

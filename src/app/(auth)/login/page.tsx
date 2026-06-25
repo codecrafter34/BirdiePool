@@ -80,9 +80,14 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground mt-8">
-          Don't have an account? <Link href="/signup" className="text-primary font-medium hover:text-primary/80 transition-colors">Sign up</Link>
-        </p>
+        <div className="flex flex-col items-center gap-2 mt-8">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account? <Link href="/signup" className="text-primary font-medium hover:text-primary/80 transition-colors">Sign up</Link>
+          </p>
+          <Link href="/admin-login" className="text-xs text-muted-foreground/60 hover:text-primary transition-colors">
+            Admin Portal Access
+          </Link>
+        </div>
       </div>
     </main>
   );

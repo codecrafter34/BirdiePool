@@ -32,35 +32,51 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isDashboard = request.nextUrl.pathname.startsWith('/dashboard');
-  const isAdmin = request.nextUrl.pathname.startsWith('/admin');
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/signup') || request.nextUrl.pathname.startsWith('/forgot-password');
+  const isAdmin = request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/admin-login');
+  const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || 
+                      request.nextUrl.pathname.startsWith('/signup') || 
+                      request.nextUrl.pathname.startsWith('/forgot-password') ||
+                      request.nextUrl.pathname.startsWith('/admin-login');
 
-  // Rule 1: Dashboard and Admin routes -> authenticated users only
-  if (!user && (isDashboard || isAdmin)) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
-  }
-
-  // Rule 2: Auth routes -> public visitors only
-  if (user && isAuthRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
-  }
-
-  // Rule 3: Admin routes -> admin role only
-  if (user && isAdmin) {
+  let userRole = null;
+  if (user) {
     const { data: profile } = await supabase
       .from('users')
       .select('role')
       .eq('id', user.id)
       .single();
+    userRole = profile?.role;
+  }
 
-    if (!profile || profile.role !== 'admin') {
+  // Rule 1: Dashboard and Admin routes -> authenticated users only
+  if (!user && (isDashboard || isAdmin)) {
+    const url = request.nextUrl.clone();
+    url.pathname = isAdmin ? '/admin-login' : '/login';
+    return NextResponse.redirect(url);
+  }
+
+  // Rule 2: Auth routes -> redirect authenticated users to their respective portals
+  if (user && isAuthRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = userRole === 'admin' ? '/admin' : '/dashboard';
+    return NextResponse.redirect(url);
+  }
+
+  // Rule 3: Admin routes -> admin role only
+  if (user && isAdmin) {
+    if (userRole !== 'admin') {
       const url = request.nextUrl.clone();
       url.pathname = '/dashboard';
-      return NextResponse.redirect(url); // Redirect subscribers attempting to breach admin
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Rule 4: Dashboard routes -> subscribers/visitors only
+  if (user && isDashboard) {
+    if (userRole === 'admin') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/admin';
+      return NextResponse.redirect(url);
     }
   }
 

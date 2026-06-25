@@ -74,13 +74,14 @@ CREATE TABLE public.scores (
 
 CREATE TABLE public.draws (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    day INTEGER NOT NULL,
     month INTEGER NOT NULL,
     year INTEGER NOT NULL,
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed')),
-    winning_numbers JSONB,
+    winning_numbers INTEGER[] DEFAULT '{}',
+    status TEXT CHECK (status IN ('pending', 'processing', 'completed')) DEFAULT 'pending',
     executed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(month, year)
+    UNIQUE(day, month, year)
 );
 
 CREATE TABLE public.draw_entries (
@@ -110,6 +111,10 @@ CREATE TABLE public.prize_pools (
     match_5_amount NUMERIC DEFAULT 0,
     match_4_amount NUMERIC DEFAULT 0,
     match_3_amount NUMERIC DEFAULT 0,
+    total_winners INTEGER DEFAULT 0,
+    match_5_winners INTEGER DEFAULT 0,
+    match_4_winners INTEGER DEFAULT 0,
+    match_3_winners INTEGER DEFAULT 0,
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 

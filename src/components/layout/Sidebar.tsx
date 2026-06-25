@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Target, Trophy, CreditCard, HeartHandshake, Settings, LogOut, Loader2 } from "lucide-react";
+import { LayoutDashboard, Target, Trophy, CreditCard, HeartHandshake, Settings, LogOut, Loader2, Users, LineChart, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logout } from "@/actions/auth";
 import { useTransition } from "react";
 
-const navItems = [
+const subscriberNavItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Overview" },
   { href: "/dashboard/scores", icon: Target, label: "My Scores" },
   { href: "/dashboard/draws", icon: Trophy, label: "Draw History" },
@@ -18,9 +18,23 @@ const navItems = [
   { href: "/dashboard/settings", icon: Settings, label: "Settings" },
 ];
 
-export function Sidebar() {
+const adminNavItems = [
+  { href: "/admin", icon: LayoutDashboard, label: "Admin Overview" },
+  { href: "/admin/users", icon: Users, label: "Users" },
+  { href: "/admin/subscriptions", icon: CreditCard, label: "Subscriptions" },
+  { href: "/admin/charities", icon: HeartHandshake, label: "Charities" },
+  { href: "/admin/draws", icon: Trophy, label: "Draws" },
+  { href: "/admin/winners", icon: Trophy, label: "Winners" },
+  { href: "/admin/scores", icon: Target, label: "Scores" },
+  { href: "/admin/reports", icon: LineChart, label: "Reports" },
+];
+
+export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
+
+  const isAdminView = pathname.startsWith('/admin');
+  const navItems = isAdminView ? adminNavItems : subscriberNavItems;
 
   const handleLogout = () => {
     startTransition(async () => {
@@ -31,14 +45,15 @@ export function Sidebar() {
   return (
     <aside className="w-64 border-r border-border bg-card hidden md:flex flex-col h-full shrink-0">
       <div className="p-6 border-b border-border h-16 flex items-center">
-        <Link href="/" className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+        <Link href={isAdminView ? "/admin" : "/dashboard"} className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
           <span className="text-primary">Birdie</span>Pool
+          {isAdminView && <span className="text-[10px] uppercase bg-destructive/20 text-destructive px-1.5 py-0.5 rounded font-bold ml-1">Admin</span>}
         </Link>
       </div>
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          const isActive = pathname === item.href || (item.href !== "/dashboard" && item.href !== "/admin" && pathname.startsWith(item.href));
           return (
             <Link
               key={item.href}
@@ -57,7 +72,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border space-y-2">
         <button 
           onClick={handleLogout}
           disabled={isPending}

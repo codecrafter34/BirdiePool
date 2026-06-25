@@ -90,3 +90,36 @@ export async function runDrawSimulation() {
   revalidatePath('/admin');
   return { success: true, numbers: generatedNumbers };
 }
+
+export async function approveWinner(winnerId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not authenticated' };
+
+  const { data: profile } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profile?.role !== 'admin') {
+    return { error: 'Unauthorized' };
+  }
+
+  const { error } = await supabase
+    .from('winners')
+    .update({ status: 'approved' })
+    .eq('id', winnerId);
+
+  // Fallback to verification_status if status update failed or didn't exist
+  if (error) {
+    const { error: fallbackError } = await supabase
+      .from('winners')
+      .update({ verification_status: 'approved' })
+      .eq('id', winnerId);
+    if (fallbackError) return { error: fallbackError.message };
+  }
+
+  revalidatePath('/admin');
+  return { success: true };
+}

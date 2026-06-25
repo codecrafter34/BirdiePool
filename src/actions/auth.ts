@@ -14,17 +14,54 @@ export async function login(formData: FormData) {
 
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
-  if (error) {
-    return { error: error.message };
+  if (error || !data.user) {
+    return { error: error?.message || 'Login failed' };
+  }
+
+  const { data: profile } = await supabase.from('users').select('role').eq('id', data.user.id).single();
+  
+  if (profile?.role === 'admin') {
+    await supabase.auth.signOut();
+    return { error: 'Administrators must use the Admin Portal.' };
   }
 
   revalidatePath('/', 'layout');
   redirect('/dashboard');
+}
+
+export async function adminLogin(formData: FormData) {
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+
+  if (!email || !password) {
+    return { error: 'Email and password are required' };
+  }
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error || !data.user) {
+    return { error: error?.message || 'Login failed' };
+  }
+
+  const { data: profile } = await supabase.from('users').select('role').eq('id', data.user.id).single();
+  
+  if (profile?.role !== 'admin') {
+    await supabase.auth.signOut();
+    return { error: 'Access denied. Only administrators can use this portal.' };
+  }
+
+  revalidatePath('/', 'layout');
+  redirect('/admin');
 }
 
 export async function signup(formData: FormData) {

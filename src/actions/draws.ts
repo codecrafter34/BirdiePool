@@ -14,25 +14,27 @@ async function requireAdmin() {
   return { supabase, user };
 }
 
-export async function runDrawSimulation(month: number, year: number) {
+export async function runDrawSimulation(day: number, month: number, year: number) {
   try {
-    const { user } = await requireAdmin();
-    const result = await DrawEngine.simulateDraw(user.id, month, year);
+    const { supabase, user } = await requireAdmin();
+    const result = await DrawEngine.simulateDraw(supabase, user.id, day, month, year);
     revalidatePath('/admin/draws');
+    revalidatePath('/admin');
     return { success: true, result };
   } catch (err: any) {
-    return { success: false, error: err.message };
+    throw new Error(err.message);
   }
 }
 
 export async function publishDrawResults() {
   try {
-    await requireAdmin();
-    const result = await DrawEngine.executeMonthlyDraw();
+    const { supabase } = await requireAdmin();
+    const result = await DrawEngine.executeDailyDraw(supabase);
     revalidatePath('/admin/draws');
+    revalidatePath('/admin');
     return result;
   } catch (err: any) {
-    return { success: false, error: err.message };
+    throw new Error(err.message);
   }
 }
 

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { runDrawSimulation, publishDrawResults, updateDrawLogic } from "@/actions/draws";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export default async function AdminDrawsPage() {
   const supabase = await createClient();
@@ -53,7 +54,7 @@ export default async function AdminDrawsPage() {
                 <input type="number" name="pct3" defaultValue={logic.match_3_pct} className="w-full bg-background border border-border rounded px-3 py-2 text-white" />
               </div>
             </div>
-            <button className="bg-primary text-primary-foreground px-4 py-2 rounded text-sm font-medium hover:bg-primary/90 w-full">Update Configuration</button>
+            <SubmitButton className="bg-primary text-primary-foreground px-4 py-2 rounded text-sm font-medium hover:bg-primary/90 w-full">Update Configuration</SubmitButton>
           </form>
         </div>
 
@@ -61,15 +62,19 @@ export default async function AdminDrawsPage() {
         <div className="bg-card border border-border rounded-xl p-6 flex flex-col justify-center space-y-4">
           <h3 className="text-lg font-bold text-white">Execution Engine</h3>
           <div className="flex gap-4">
-            <form action={async () => { 'use server'; await runDrawSimulation(currentMonth, currentYear); }} className="flex-1">
-              <button className="bg-accent text-accent-foreground px-4 py-3 rounded text-sm font-medium hover:bg-accent/90 w-full">
-                Run Simulation ({currentMonth}/{currentYear})
-              </button>
+            <form action={async () => { 
+              'use server'; 
+              const d = new Date();
+              await runDrawSimulation(d.getDate(), d.getMonth() + 1, d.getFullYear()); 
+            }} className="flex-1">
+              <SubmitButton className="bg-accent text-accent-foreground px-4 py-3 rounded text-sm font-medium hover:bg-accent/90 w-full">
+                Run Simulation ({now.getDate()}/{currentMonth}/{currentYear})
+              </SubmitButton>
             </form>
             <form action={async () => { 'use server'; await publishDrawResults(); }} className="flex-1">
-              <button className="bg-primary text-primary-foreground px-4 py-3 rounded text-sm font-medium hover:bg-primary/90 w-full">
+              <SubmitButton className="bg-primary text-primary-foreground px-4 py-3 rounded text-sm font-medium hover:bg-primary/90 w-full">
                 Publish Official Results
-              </button>
+              </SubmitButton>
             </form>
           </div>
         </div>
@@ -82,7 +87,7 @@ export default async function AdminDrawsPage() {
             <table className="w-full text-sm text-left">
               <thead className="bg-background border-b border-border">
                 <tr>
-                  <th className="px-4 py-3 text-muted-foreground font-medium">Month/Year</th>
+                  <th className="px-4 py-3 text-muted-foreground font-medium">Date</th>
                   <th className="px-4 py-3 text-muted-foreground font-medium">Status</th>
                   <th className="px-4 py-3 text-muted-foreground font-medium">Prize Pool</th>
                   <th className="px-4 py-3 text-muted-foreground font-medium">Winners</th>
@@ -96,7 +101,7 @@ export default async function AdminDrawsPage() {
                   
                   return (
                     <tr key={draw.id} className="hover:bg-muted/10">
-                      <td className="px-4 py-3 text-white font-medium">{draw.month}/{draw.year}</td>
+                      <td className="px-4 py-3 text-white font-medium">{draw.day}/{draw.month}/{draw.year}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded text-xs font-bold ${
                           draw.status === 'completed' ? 'bg-primary/20 text-primary' : 'bg-accent/20 text-accent'
